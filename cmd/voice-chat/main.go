@@ -4,6 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"time"
+
+	"math/rand"
 
 	zmq "github.com/pebbe/zmq4"
 	chat "github.com/vectorhacker/voice-chat/pkg/voice-chat"
@@ -11,6 +14,7 @@ import (
 
 var (
 	endpoint = flag.String("server", "localhost", "the server endpoint")
+	speaker  = flag.String("speaker", "", "the person speaking")
 )
 
 func main() {
@@ -19,6 +23,10 @@ func main() {
 
 	pushEndpoint := fmt.Sprintf("tcp://%s:5000", *endpoint)
 	subEndpoint := fmt.Sprintf("tcp://%s:6000", *endpoint)
+
+	if *speaker == "" {
+		*speaker = randomName()
+	}
 
 	out, err := connect(zmq.PUSH, pushEndpoint)
 	in, err := connect(zmq.SUB, subEndpoint)
@@ -31,8 +39,10 @@ func main() {
 
 	in.SetSubscribe("")
 
-	playErrChan := chat.Play(in)
-	recordErrChan := chat.Record(out)
+	log.Println("Speaking as", *speaker)
+
+	playErrChan := chat.Play(in, *speaker)
+	recordErrChan := chat.Record(out, *speaker)
 
 	for {
 		select {
@@ -64,4 +74,15 @@ func connect(socketType zmq.Type, endpoint string) (socket *zmq.Socket, err erro
 	}
 
 	return
+}
+
+var (
+	adverbs = [6]string{"amazing", "rad", "joyful", "pretty", "good", "salty"}
+	nouns   = [6]string{"pencil", "girl", "boy", "computer", "astronaut", "space cadet"}
+)
+
+func randomName() string {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	return adverbs[r.Intn(6)] + " " + nouns[r.Intn(6)]
 }

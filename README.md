@@ -17,6 +17,7 @@ Make sure that the zeromq and portaudio libraries are installed
 
 ```shell
 sudo apt install libzmq3-dev portaudio19-dev
+sudo apt install libpulse-dev
 ```
 
 Then go get the binary

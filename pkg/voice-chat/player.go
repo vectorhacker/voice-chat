@@ -1,25 +1,30 @@
 package chat
 
 import (
-	"bytes"
-	"io/ioutil"
-	"log"
-	"time"
-
+	"github.com/mesilliac/pulse-simple"
 	"github.com/pkg/errors"
 	voicechat "github.com/vectorhacker/voice-chat/pb"
 
-	"github.com/faiface/beep/speaker"
-	"github.com/faiface/beep/wav"
 	proto "github.com/gogo/protobuf/proto"
 	zmq "github.com/pebbe/zmq4"
 )
 
-func Play(in *zmq.Socket) chan error {
+func Play(in *zmq.Socket, name string) chan error {
 
 	errChan := make(chan error)
 
 	go func() {
+
+		ss := pulse.SampleSpec{pulse.SAMPLE_FLOAT32LE, sampleRate, 1}
+		playback, err := pulse.Playback("pulse-simple test", "playback test", &ss)
+
+		if err != nil {
+			errChan <- err
+			return
+		}
+		defer playback.Free()
+		defer playback.Drain()
+
 		for {
 			rawSample, err := in.Recv(0)
 			if err != nil {
@@ -38,22 +43,11 @@ func Play(in *zmq.Socket) chan error {
 				return
 			}
 
-			buf := bytes.NewBuffer(sample.Sample)
-
-			sound := ioutil.NopCloser(buf)
-			streamer, format, err := wav.Decode(sound)
-			if err != nil {
-				errChan <- errors.Wrap(err, "cannot decode")
-				return
+			if sample.Speaker == name {
+				continue
 			}
-			defer streamer.Close()
 
-			log.Println("playing...")
-
-			speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-
-			speaker.Play(streamer)
-			<-time.After(17 * time.Millisecond)
+			playback.Write(sample.Sample)
 		}
 	}()
 

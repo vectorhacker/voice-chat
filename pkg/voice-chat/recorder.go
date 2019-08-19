@@ -1,49 +1,37 @@
 package chat
 
 import (
-	"time"
-
-	"github.com/MarkKremer/microphone"
-	"github.com/faiface/beep/wav"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/mesilliac/pulse-simple"
 	zmq "github.com/pebbe/zmq4"
-	"github.com/pkg/errors"
 	voicechat "github.com/vectorhacker/voice-chat/pb"
 )
 
 const sampleRate = 44100
 
-func Record(out *zmq.Socket) chan error {
+func Record(out *zmq.Socket, name string) chan error {
 	errChan := make(chan error)
 
 	go func() {
-		err := microphone.Init()
+		ss := pulse.SampleSpec{pulse.SAMPLE_FLOAT32LE, sampleRate, 1}
+
+		capture, err := pulse.Capture("audio", "audio", &ss)
 		if err != nil {
 			errChan <- err
 			return
 		}
-		defer microphone.Terminate()
-
-		streamer, format, err := microphone.OpenDefaultStream(sampleRate)
-		if err != nil {
-			errChan <- errors.Wrap(err, "unable to create stream")
-		}
-		defer streamer.Close()
+		defer capture.Free()
 
 		for {
-			streamer.Start()
+			buffer := make([]byte, sampleRate*4/25)
 
-			<-time.After(1 * time.Second)
+			_, err := capture.Read(buffer)
+			if err != nil {
+				errChan <- err
+				return
+			}
 
-			streamer.Stop()
-
-			f := &writer{}
-
-			wav.Encode(f, streamer, format)
-
-			sample := f.Bytes()
-			voiceSample := &voicechat.VoiceSample{Sample: sample}
-
+			voiceSample := &voicechat.VoiceSample{Sample: buffer, Speaker: name}
 			msg, err := proto.Marshal(voiceSample)
 			if err != nil {
 				errChan <- err

@@ -13,23 +13,30 @@ import (
 )
 
 var (
-	endpoint = flag.String("server", "localhost", "the server endpoint")
-	speaker  = flag.String("speaker", "", "the person speaking")
+	endpoint     = flag.String("server", "localhost", "the server endpoint")
+	pushEndpoint = flag.String("push", "", "push endpoint")
+	subEndpoint  = flag.String("sub", "", "sub endpoint")
+	speaker      = flag.String("speaker", "", "the person speaking")
 )
 
 func main() {
 
 	flag.Parse()
 
-	pushEndpoint := fmt.Sprintf("tcp://%s:5000", *endpoint)
-	subEndpoint := fmt.Sprintf("tcp://%s:6000", *endpoint)
+	if *pushEndpoint == "" {
+		*pushEndpoint = fmt.Sprintf("tcp://%s:5000", *endpoint)
+	}
+
+	if *subEndpoint == "" {
+		*subEndpoint = fmt.Sprintf("tcp://%s:6000", *endpoint)
+	}
 
 	if *speaker == "" {
 		*speaker = randomName()
 	}
 
-	out, err := connect(zmq.PUSH, pushEndpoint)
-	in, err := connect(zmq.SUB, subEndpoint)
+	out, err := connect(zmq.PUSH, *pushEndpoint)
+	in, err := connect(zmq.SUB, *subEndpoint)
 	if err != nil {
 		// TODO: better error handling here
 		panic(err)

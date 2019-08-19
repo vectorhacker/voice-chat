@@ -16,7 +16,7 @@ This project is under heavy development and internal API will change. This is no
 Make sure that the zeromq and portaudio libraries are installed
 
 ```shell
-sudo apt install libzmq3-dev portaudio19-dev
+sudo apt install libzmq3-dev 
 sudo apt install libpulse-dev
 ```
 

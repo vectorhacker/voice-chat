@@ -1,13 +1,13 @@
 package chat
 
 import (
-	"io/ioutil"
-	"math/rand"
-	"os"
+	"time"
 
-	"github.com/faiface/beep"
+	"github.com/MarkKremer/microphone"
+	"github.com/faiface/beep/wav"
 	proto "github.com/gogo/protobuf/proto"
 	zmq "github.com/pebbe/zmq4"
+	"github.com/pkg/errors"
 	voicechat "github.com/vectorhacker/voice-chat/pb"
 )
 
@@ -17,43 +17,31 @@ func Record(out *zmq.Socket) chan error {
 	errChan := make(chan error)
 
 	go func() {
+		err := microphone.Init()
+		if err != nil {
+			errChan <- err
+			return
+		}
+		defer microphone.Terminate()
+
+		streamer, format, err := microphone.OpenDefaultStream(sampleRate)
+		if err != nil {
+			errChan <- errors.Wrap(err, "unable to create stream")
+		}
+		defer streamer.Close()
 
 		for {
+			streamer.Start()
 
-			// select {
-			// 	case <-time.After(17 * time.Millisecond):
-			// 		rawSample, err := ioutil.TempFile("", "sound.wav")
+			<-time.After(1 * time.Second)
 
-			// 		if err != nil {
-			// 			errChan <- err
-			// 			return
-			// 		}
-			// 		err = wav.Encode(rawSample, stream, format)
-			// 		if err != nil {
-			// 			errChan <- err
-			// 			return
-			// 		}
+			streamer.Stop()
 
-			// 		sample, err := ioutil.ReadAll(rawSample)
+			f := &writer{}
 
-			// 		voiceSample := &voicechat.VoiceSample{Sample: sample}
+			wav.Encode(f, streamer, format)
 
-			// 		msg, err := proto.Marshal(voiceSample)
-			// 		if err != nil {
-			// 			errChan <- err
-			// 			return
-			// 		}
-
-			// 		_, err = out.Send(string(msg), 0)
-			// 		if err != nil {
-			// 			errChan <- err
-			// 			return
-			// 		}
-			// 	}
-
-			rawSample, err := os.Open("./Lame_Drivers_-_01_-_Frozen_Egg.mp3")
-			sample, err := ioutil.ReadAll(rawSample)
-
+			sample := f.Bytes()
 			voiceSample := &voicechat.VoiceSample{Sample: sample}
 
 			msg, err := proto.Marshal(voiceSample)
@@ -72,14 +60,4 @@ func Record(out *zmq.Socket) chan error {
 	}()
 
 	return errChan
-}
-
-func Noise() beep.Streamer {
-	return beep.StreamerFunc(func(samples [][2]float64) (n int, ok bool) {
-		for i := range samples {
-			samples[i][0] = rand.Float64()*2 - 1
-			samples[i][1] = rand.Float64()*2 - 1
-		}
-		return len(samples), true
-	})
 }

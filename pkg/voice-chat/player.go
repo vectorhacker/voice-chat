@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 	voicechat "github.com/vectorhacker/voice-chat/pb"
 
-	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
+	"github.com/faiface/beep/wav"
 	proto "github.com/gogo/protobuf/proto"
 	zmq "github.com/pebbe/zmq4"
 )
@@ -41,7 +41,7 @@ func Play(in *zmq.Socket) chan error {
 			buf := bytes.NewBuffer(sample.Sample)
 
 			sound := ioutil.NopCloser(buf)
-			streamer, format, err := mp3.Decode(sound)
+			streamer, format, err := wav.Decode(sound)
 			if err != nil {
 				errChan <- errors.Wrap(err, "cannot decode")
 				return

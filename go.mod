@@ -8,5 +8,5 @@ require (
 	github.com/gogo/protobuf v1.2.1
 	github.com/pebbe/zmq4 v1.0.0
 	github.com/pkg/errors v0.8.1
-	github.com/zeromq/goczmq v0.0.0-20190622112907-4715d4da6d4b
+	github.com/zeromq/goczmq v0.0.0-20190622112907-4715d4da6d4b // indirect
 )

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package voicechat;
+
+message VoiceSample {
+    // speaker is the current speaker of the sound
+    string speaker = 1;
+    // sample is going to be flac encoded sample of sound.
+    bytes sample = 2;
+}

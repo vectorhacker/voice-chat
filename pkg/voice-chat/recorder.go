@@ -7,7 +7,7 @@ import (
 	voicechat "github.com/vectorhacker/voice-chat/pb"
 )
 
-const sampleRate = 44100
+const sampleRate = 11025
 
 func Record(out *zmq.Socket, name string) chan error {
 	errChan := make(chan error)

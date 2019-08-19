@@ -3,6 +3,9 @@ Voice Chat
 
 Voice Chat is a voice chat client and server that aims to be as simple as possible at hosting voice conversations.
 
+# IMPORTANT NOTICE
+This project is under heavy development and internal API will change. This is not complete
+
 ## Goals:
 - Be CLI based
 - Be as simple as possible to use

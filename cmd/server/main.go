@@ -14,12 +14,20 @@ func main() {
 	pull.Bind("tcp://*:5000")
 	pub.Bind("tcp://*:6000")
 
-	for {
-		msg, err := pull.Recv(0)
-		if err != nil {
-			panic(err)
+	buffer := make(chan string, 1000)
+	go func() {
+		for {
+			msg, err := pull.Recv(0)
+			if err != nil {
+				panic(err)
+			}
+			buffer <- msg
 		}
 
+	}()
+
+	for {
+		msg := <-buffer
 		pub.SendMessage("", msg)
 	}
 }
